@@ -1,0 +1,319 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PostLab | Social Media Operations Tracker</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <div class="brand">
+          <div class="brand-mark">P</div>
+          <div>
+            <strong>PostLab</strong>
+            <span>@YiranZheng0206</span>
+          </div>
+        </div>
+        <nav class="nav" aria-label="Primary pages">
+          <button class="nav-item is-active" data-view="home" type="button">
+            <span class="nav-icon">⌂</span> <span data-i18n="navHome">Home</span>
+          </button>
+          <button class="nav-item" data-view="dashboard" type="button">
+            <span class="nav-icon">⌁</span> <span data-i18n="navDashboard">Overview</span>
+          </button>
+          <button class="nav-item" data-view="entry" type="button">
+            <span class="nav-icon">＋</span> <span data-i18n="navEntry">Entry</span>
+          </button>
+          <button class="nav-item" data-view="settings" type="button">
+            <span class="nav-icon">◌</span> <span data-i18n="navSettings">Settings</span>
+          </button>
+        </nav>
+        <div class="sidebar-note">
+          <span data-i18n="nextReminderLabel">Next reminder</span>
+          <strong id="nextReminder">No pending entry</strong>
+        </div>
+      </aside>
+
+      <main>
+        <section class="view is-visible home-view" id="home">
+          <div class="home-stage">
+            <div class="collage-board" aria-label="PostLab visual system">
+              <img class="collage-main" src="assets/postlab-collage-source.png" alt="Illustrated creator analytics collage" />
+              <div class="float-card stats-card card-views">
+                <span>Views</span>
+                <strong>89.7K</strong>
+                <div class="sparkline"><i></i><i></i><i></i><i></i><i></i></div>
+              </div>
+              <div class="float-card sound-card">
+                <span>Sound</span>
+                <div class="waveform" aria-hidden="true">
+                  <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+                </div>
+              </div>
+              <div class="float-card social-card">
+                <span>♥ 10K</span>
+                <span>● comment 292</span>
+                <span>▣ save 1,032</span>
+              </div>
+              <div class="float-card tag-card">
+                <span>#fyp</span>
+                <span>#trending</span>
+                <span>#content</span>
+              </div>
+              <div class="float-card timeline-card">
+                <span>24h</span>
+                <span>72h</span>
+                <span>7d</span>
+                <span>30d</span>
+              </div>
+              <div class="orbit-dot dot-one"></div>
+              <div class="orbit-dot dot-two"></div>
+              <div class="orbit-dot dot-three"></div>
+            </div>
+
+            <div class="home-copy">
+              <div class="date-lockup">
+                <span id="homeMonth">MAY</span>
+                <strong id="homeDay">30</strong>
+              </div>
+              <p class="home-summary" data-i18n="homeSummary">
+                Configure platforms and metrics, then let PostLab turn 24h, 72h, weekly, and monthly checkpoints into readable creator insights.
+              </p>
+              <div class="home-actions">
+                <button class="primary-action" data-view-target="entry" data-i18n="startEntry" type="button">Start entry</button>
+                <button class="ghost-action inverted" data-view-target="settings" data-i18n="configureTracking" type="button">Configure tracking</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="view" id="dashboard">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Dashboard</p>
+              <h2 data-i18n="dashboardTitle">Overview</h2>
+            </div>
+            <div class="section-actions">
+              <button class="ghost-action" id="exportExcel" data-i18n="exportExcel" type="button">Export Excel</button>
+              <div class="range-pill" data-i18n="recentRange">Latest 30 posts</div>
+            </div>
+          </div>
+
+          <div class="kpi-grid" id="kpiGrid"></div>
+
+          <div class="analytics-grid">
+            <article class="panel large">
+              <div class="panel-heading">
+                <h3 data-i18n="platformPerformance">Platform performance</h3>
+                <span data-i18n="sortByQuality">Sorted by interaction quality</span>
+              </div>
+              <div class="platform-table" id="platformTable"></div>
+            </article>
+
+            <article class="panel">
+              <div class="panel-heading">
+                <h3 data-i18n="bestTimesTitle">Best posting time</h3>
+                <span data-i18n="basedHistory">Based on historical performance</span>
+              </div>
+              <div id="bestTimes" class="stack-list"></div>
+            </article>
+
+            <article class="panel">
+              <div class="panel-heading">
+                <h3 data-i18n="hashtagTitle">High-potential Hashtags</h3>
+                <span data-i18n="higherAverage">Higher average performance</span>
+              </div>
+              <div id="hashtagList" class="tag-cloud"></div>
+            </article>
+
+            <article class="panel large">
+              <div class="panel-heading">
+                <h3 data-i18n="hookTitle">Hook Type comparison</h3>
+                <span data-i18n="longerScore">Longer bars mean stronger scores</span>
+              </div>
+              <div id="hookBars" class="bar-list"></div>
+            </article>
+
+            <article class="panel">
+              <div class="panel-heading">
+                <h3 data-i18n="pendingReminders">Pending reminders</h3>
+                <span data-i18n="fillMetrics">Fill metrics when due</span>
+              </div>
+              <div id="reminderList" class="reminder-list"></div>
+            </article>
+          </div>
+        </section>
+
+        <section class="view" id="entry">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Entry</p>
+              <h2 data-i18n="entryTitle">Video and metric entry</h2>
+            </div>
+          </div>
+
+          <div class="entry-layout">
+            <form class="panel entry-form" id="videoForm">
+              <div class="panel-heading">
+                <h3 data-i18n="newVideo">New video</h3>
+                <span data-i18n="autoReminder">Reminders are created after saving</span>
+              </div>
+
+              <label>
+                <span data-i18n="videoLink">Video link</span>
+                <div class="link-import">
+                  <input id="videoUrl" type="url" data-placeholder-i18n="videoUrlPlaceholder" placeholder="Paste a TikTok / Douyin / YouTube link" />
+                  <button class="secondary-action" id="importLink" data-i18n="extract" type="button">Extract</button>
+                </div>
+                <span class="field-note" id="importStatus" data-i18n="extractNote">Link extraction reads only what is visible in the URL. Short links need manual fields or an API connection.</span>
+              </label>
+
+              <div class="form-grid">
+                <label>
+                  <span data-i18n="platform">Platform</span>
+                  <select id="platformSelect" required></select>
+                </label>
+                <label>
+                  Publish Date
+                  <input id="publishDate" type="date" required />
+                </label>
+                <label>
+                  Publish Time
+                  <input id="publishTime" type="time" required />
+                </label>
+                <label>
+                  Hook Type
+                  <select id="hookType" required>
+                    <option value="Question hook">Question hook</option>
+                    <option value="Contrast hook">Contrast hook</option>
+                    <option value="Result first">Result first</option>
+                    <option value="Tutorial steps">Tutorial steps</option>
+                    <option value="Storytelling">Storytelling</option>
+                    <option value="Trend angle">Trend angle</option>
+                  </select>
+                </label>
+              </div>
+
+              <label>
+                Topic
+                <input id="topic" type="text" data-placeholder-i18n="topicPlaceholder" placeholder="e.g. Spring outfit idea / AI tool tutorial" required />
+              </label>
+
+              <label>
+                Hashtag
+                <input id="hashtags" type="text" placeholder="#content, #growth, #creator" />
+              </label>
+
+              <div class="metric-entry" id="metricEntry"></div>
+
+              <button class="primary-action full" data-i18n="saveVideo" type="submit">Save video and create reminders</button>
+            </form>
+
+            <article class="panel">
+              <div class="panel-heading">
+                <h3 data-i18n="contentList">Content list</h3>
+                <span id="videoCount">0 posts</span>
+              </div>
+              <div id="videoList" class="video-list"></div>
+            </article>
+          </div>
+        </section>
+
+        <section class="view" id="settings">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Setup</p>
+              <h2 data-i18n="settingsTitle">Platform and tracking settings</h2>
+            </div>
+          </div>
+
+          <div class="settings-grid">
+            <form class="panel" id="settingsForm">
+              <div class="panel-heading">
+                <h3 data-i18n="setupTitle">Setup</h3>
+                <span data-i18n="editableLater">You can change this anytime</span>
+              </div>
+
+              <label>
+                <span data-i18n="language">Language</span>
+                <select id="languageSelect">
+                  <option value="en">English</option>
+                  <option value="zh">中文</option>
+                  <option value="ja">日本語</option>
+                </select>
+              </label>
+
+              <label>
+                <span data-i18n="timezone">Time zone</span>
+                <select id="timezoneSelect">
+                  <option value="Asia/Shanghai">Beijing Time (UTC+8)</option>
+                  <option value="Asia/Tokyo">Tokyo</option>
+                  <option value="UTC">UTC</option>
+                  <option value="America/Los_Angeles">Los Angeles</option>
+                  <option value="America/New_York">New York</option>
+                  <option value="Europe/London">London</option>
+                  <option value="Europe/Paris">Paris</option>
+                </select>
+              </label>
+
+              <label>
+                <span data-i18n="addPlatformLabel">Add operating platform</span>
+                <div class="link-import">
+                  <input id="platformInput" type="text" data-placeholder-i18n="platformPlaceholder" placeholder="e.g. TikTok, Douyin, YouTube" />
+                  <button class="secondary-action" id="addPlatform" data-i18n="add" type="button">Add</button>
+                </div>
+              </label>
+              <div class="chip-row" id="platformChips"></div>
+
+              <div class="settings-block">
+                <div class="settings-title">
+                  <h4 data-i18n="metricsTitle">Tracked metrics</h4>
+                  <button class="text-button" id="selectAllMetrics" data-i18n="selectAll" type="button">Select all</button>
+                </div>
+                <div class="option-grid" id="metricOptions"></div>
+              </div>
+
+              <div class="settings-block">
+                <div class="settings-title">
+                  <h4 data-i18n="checkpointsTitle">Data entry checkpoints</h4>
+                  <span data-i18n="checkpointDefault">Default 24h / 72h / weekly</span>
+                </div>
+                <div class="option-grid" id="checkpointOptions"></div>
+              </div>
+
+              <div class="settings-block">
+                <div class="settings-title">
+                  <h4 data-i18n="backupTitle">Backup</h4>
+                  <span data-i18n="backupHint">Save or restore all local data</span>
+                </div>
+                <div class="backup-actions">
+                  <button class="secondary-action" id="exportBackup" data-i18n="exportBackup" type="button">Export backup</button>
+                  <button class="ghost-action" id="importBackup" data-i18n="importBackup" type="button">Import backup</button>
+                  <input id="backupFile" type="file" accept="application/json,.json" hidden />
+                </div>
+              </div>
+
+              <button class="primary-action full" data-i18n="saveSettings" type="submit">Save settings</button>
+            </form>
+
+            <article class="panel">
+              <div class="panel-heading">
+                <h3 data-i18n="autoExtractTitle">Auto extraction note</h3>
+                <span data-i18n="draftParsing">Current prototype supports draft parsing</span>
+              </div>
+              <div class="integration-note">
+                <p data-i18n="autoExtractP1">After you paste a link, PostLab infers the platform, topic, and hashtags from the domain and URL fragments, then prefills the publish time.</p>
+                <p data-i18n="autoExtractP2">Fully automated reads for views, likes, comments, and stars usually require official APIs, account authorization, or exported platform data. This interface keeps the structure ready for that upgrade.</p>
+              </div>
+            </article>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <script src="app.js"></script>
+  </body>
+</html>
