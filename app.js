@@ -30,6 +30,24 @@ const translations = {
     navDashboard: "Overview",
     navEntry: "Entry",
     navSettings: "Settings",
+    cloudStorage: "Cloud storage",
+    emailPlaceholder: "Email",
+    passwordPlaceholder: "Password",
+    signIn: "Sign in",
+    signUp: "Sign up",
+    signOut: "Sign out",
+    syncCloud: "Sync now",
+    localMode: "Local mode. Add Supabase env vars to enable cloud sync.",
+    signedOutMode: "Sign in to sync data across devices.",
+    signedInMode: "Cloud sync is on.",
+    savingCloud: "Saving to cloud...",
+    savedCloud: "Saved to cloud",
+    cloudLoadError: "Could not load cloud data",
+    cloudSaveError: "Could not save cloud data",
+    authMissing: "Enter email and password",
+    authCheckEmail: "Check your email to confirm your account",
+    authSuccess: "Signed in",
+    authSignedOut: "Signed out",
     nextReminderLabel: "Next reminder",
     noPending: "No pending entry",
     homeSummary:
@@ -127,6 +145,24 @@ const translations = {
     navDashboard: "总览",
     navEntry: "录入",
     navSettings: "设置",
+    cloudStorage: "云端存储",
+    emailPlaceholder: "邮箱",
+    passwordPlaceholder: "密码",
+    signIn: "登录",
+    signUp: "注册",
+    signOut: "退出",
+    syncCloud: "立即同步",
+    localMode: "本地模式。添加 Supabase 环境变量后可开启云同步。",
+    signedOutMode: "登录后可跨设备同步数据。",
+    signedInMode: "云同步已开启。",
+    savingCloud: "正在保存到云端...",
+    savedCloud: "已保存到云端",
+    cloudLoadError: "无法读取云端数据",
+    cloudSaveError: "无法保存到云端",
+    authMissing: "请输入邮箱和密码",
+    authCheckEmail: "请查看邮箱并确认账号",
+    authSuccess: "已登录",
+    authSignedOut: "已退出",
     nextReminderLabel: "下一次提醒",
     noPending: "暂无待录入",
     homeSummary: "配置平台和指标，让 PostLab 把 24h、72h、一周、一月等复盘节点沉淀成可读的运营洞察。",
@@ -221,6 +257,24 @@ const translations = {
     navDashboard: "概要",
     navEntry: "入力",
     navSettings: "設定",
+    cloudStorage: "クラウド保存",
+    emailPlaceholder: "メール",
+    passwordPlaceholder: "パスワード",
+    signIn: "ログイン",
+    signUp: "登録",
+    signOut: "ログアウト",
+    syncCloud: "今すぐ同期",
+    localMode: "ローカルモード。Supabase 環境変数を追加するとクラウド同期できます。",
+    signedOutMode: "ログインすると端末間で同期できます。",
+    signedInMode: "クラウド同期が有効です。",
+    savingCloud: "クラウドに保存中...",
+    savedCloud: "クラウドに保存しました",
+    cloudLoadError: "クラウドデータを読み込めませんでした",
+    cloudSaveError: "クラウドに保存できませんでした",
+    authMissing: "メールとパスワードを入力してください",
+    authCheckEmail: "メールを確認してアカウントを承認してください",
+    authSuccess: "ログインしました",
+    authSignedOut: "ログアウトしました",
     nextReminderLabel: "次のリマインド",
     noPending: "未入力なし",
     homeSummary: "プラットフォームと指標を設定し、24h、72h、週次、月次の記録ポイントを読みやすい運用インサイトに変換します。",
@@ -313,6 +367,11 @@ const translations = {
 };
 
 let state = loadState();
+let supabase = null;
+let currentUser = null;
+let cloudRecordId = null;
+let cloudSaveTimer = null;
+let isLoadingCloud = false;
 
 const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => Array.from(document.querySelectorAll(selector));
@@ -350,6 +409,7 @@ function applyLanguage() {
   if (languageSelect) languageSelect.value = currentLanguage();
   const timezoneSelect = $("#timezoneSelect");
   if (timezoneSelect) timezoneSelect.value = currentTimezone();
+  renderAuthPanel();
 }
 
 function renderHomeDate() {
@@ -385,6 +445,128 @@ function loadState() {
 
 function saveState() {
   localStorage.setItem("postLabState", JSON.stringify(state));
+  queueCloudSave();
+}
+
+function serializableState() {
+  return {
+    settings: state.settings,
+    videos: state.videos,
+    completedReminders: state.completedReminders,
+  };
+}
+
+async function initSupabase() {
+  const env = import.meta.env || {};
+  const url = env.VITE_SUPABASE_URL;
+  const key = env.VITE_SUPABASE_ANON_KEY;
+  if (!url || !key) return null;
+  const { createClient } = await import("@supabase/supabase-js");
+  return createClient(url, key);
+}
+
+function setCloudStatus(messageKey) {
+  const element = $("#cloudStatus");
+  if (element) element.textContent = t(messageKey);
+}
+
+function renderAuthPanel() {
+  const signedOut = $("#authSignedOut");
+  const signedIn = $("#authSignedIn");
+  const email = $("#authUserEmail");
+  if (!signedOut || !signedIn) return;
+
+  signedOut.hidden = Boolean(currentUser);
+  signedIn.hidden = !currentUser;
+  if (email) email.textContent = currentUser?.email || "";
+
+  if (!supabase) {
+    setCloudStatus("localMode");
+  } else if (currentUser) {
+    setCloudStatus("signedInMode");
+  } else {
+    setCloudStatus("signedOutMode");
+  }
+}
+
+async function initCloud() {
+  supabase = await initSupabase();
+  renderAuthPanel();
+  if (!supabase) return;
+
+  const { data } = await supabase.auth.getSession();
+  currentUser = data.session?.user || null;
+  if (currentUser) await loadCloudState();
+
+  supabase.auth.onAuthStateChange(async (_event, session) => {
+    currentUser = session?.user || null;
+    cloudRecordId = null;
+    if (currentUser) {
+      await loadCloudState();
+    } else {
+      state = loadState();
+    }
+    renderAll();
+  });
+}
+
+async function loadCloudState() {
+  if (!supabase || !currentUser) return;
+  isLoadingCloud = true;
+  const { data, error } = await supabase
+    .from("postlab_data")
+    .select("id,data")
+    .eq("user_id", currentUser.id)
+    .maybeSingle();
+
+  if (error) {
+    setCloudStatus("cloudLoadError");
+    isLoadingCloud = false;
+    return;
+  }
+
+  if (data?.data) {
+    cloudRecordId = data.id;
+    const normalized = normalizeImportedState(data.data);
+    if (normalized) {
+      state = normalized;
+      localStorage.setItem("postLabState", JSON.stringify(state));
+    }
+  } else {
+    await saveCloudState();
+  }
+
+  isLoadingCloud = false;
+}
+
+function queueCloudSave() {
+  if (!supabase || !currentUser || isLoadingCloud) return;
+  window.clearTimeout(cloudSaveTimer);
+  cloudSaveTimer = window.setTimeout(() => {
+    saveCloudState();
+  }, 550);
+}
+
+async function saveCloudState() {
+  if (!supabase || !currentUser) return;
+  setCloudStatus("savingCloud");
+  const payload = {
+    user_id: currentUser.id,
+    data: serializableState(),
+    updated_at: new Date().toISOString(),
+  };
+
+  const query = cloudRecordId
+    ? supabase.from("postlab_data").update(payload).eq("id", cloudRecordId).select("id").single()
+    : supabase.from("postlab_data").insert(payload).select("id").single();
+
+  const { data, error } = await query;
+  if (error) {
+    setCloudStatus("cloudSaveError");
+    return;
+  }
+  cloudRecordId = data.id;
+  setCloudStatus("savedCloud");
 }
 
 function formatNumber(value) {
@@ -864,6 +1046,55 @@ function importBackupFile(file) {
   reader.readAsText(file);
 }
 
+function authValues() {
+  return {
+    email: $("#authEmail").value.trim(),
+    password: $("#authPassword").value,
+  };
+}
+
+async function signIn() {
+  if (!supabase) {
+    toast(t("localMode"));
+    return;
+  }
+  const { email, password } = authValues();
+  if (!email || !password) {
+    toast(t("authMissing"));
+    return;
+  }
+  const { error } = await supabase.auth.signInWithPassword({ email, password });
+  if (error) {
+    toast(error.message);
+    return;
+  }
+  toast(t("authSuccess"));
+}
+
+async function signUp() {
+  if (!supabase) {
+    toast(t("localMode"));
+    return;
+  }
+  const { email, password } = authValues();
+  if (!email || !password) {
+    toast(t("authMissing"));
+    return;
+  }
+  const { error } = await supabase.auth.signUp({ email, password });
+  if (error) {
+    toast(error.message);
+    return;
+  }
+  toast(t("authCheckEmail"));
+}
+
+async function signOut() {
+  if (!supabase) return;
+  await supabase.auth.signOut();
+  toast(t("authSignedOut"));
+}
+
 function bindEvents() {
   $$(".nav-item").forEach((button) => {
     button.addEventListener("click", () => switchView(button.dataset.view));
@@ -874,6 +1105,13 @@ function bindEvents() {
   });
 
   $("#exportExcel").addEventListener("click", exportExcel);
+
+  $("#signInButton").addEventListener("click", signIn);
+  $("#signUpButton").addEventListener("click", signUp);
+  $("#signOutButton").addEventListener("click", signOut);
+  $("#syncCloudButton").addEventListener("click", () => {
+    saveCloudState();
+  });
 
   $("#exportBackup").addEventListener("click", exportBackup);
 
@@ -1017,11 +1255,12 @@ function bindEvents() {
   });
 }
 
-function init() {
+async function init() {
   const now = new Date();
   $("#publishDate").value = now.toISOString().slice(0, 10);
   $("#publishTime").value = now.toTimeString().slice(0, 5);
   bindEvents();
+  await initCloud();
   renderAll();
 }
 

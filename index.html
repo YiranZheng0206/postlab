@@ -30,6 +30,26 @@
             <span class="nav-icon">◌</span> <span data-i18n="navSettings">Settings</span>
           </button>
         </nav>
+        <div class="auth-panel">
+          <div id="authSignedOut">
+            <span class="auth-kicker" data-i18n="cloudStorage">Cloud storage</span>
+            <input id="authEmail" type="email" data-placeholder-i18n="emailPlaceholder" placeholder="Email" />
+            <input id="authPassword" type="password" data-placeholder-i18n="passwordPlaceholder" placeholder="Password" />
+            <div class="auth-actions">
+              <button class="secondary-action" id="signInButton" data-i18n="signIn" type="button">Sign in</button>
+              <button class="ghost-action" id="signUpButton" data-i18n="signUp" type="button">Sign up</button>
+            </div>
+          </div>
+          <div id="authSignedIn" hidden>
+            <span class="auth-kicker" data-i18n="cloudStorage">Cloud storage</span>
+            <strong id="authUserEmail"></strong>
+            <div class="auth-actions">
+              <button class="secondary-action" id="syncCloudButton" data-i18n="syncCloud" type="button">Sync now</button>
+              <button class="ghost-action" id="signOutButton" data-i18n="signOut" type="button">Sign out</button>
+            </div>
+          </div>
+          <p id="cloudStatus" class="cloud-status">Local mode</p>
+        </div>
         <div class="sidebar-note">
           <span data-i18n="nextReminderLabel">Next reminder</span>
           <strong id="nextReminder">No pending entry</strong>
@@ -314,6 +334,6 @@
     </div>
 
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
-    <script src="app.js"></script>
+    <script type="module" src="./app.js"></script>
   </body>
 </html>
